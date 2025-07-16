@@ -52,6 +52,6 @@ CELEX is the unique identifier used by EUR-Lex to track EU legal documents. This
 
 ## 🧑‍💻 Author
 
-Built by chatGTP, under supervision of Kriss ;-) — feel free to fork, enhance, or contribute.
+Built by chatGPT, under supervision of Kriss ;-) — feel free to fork, enhance, or contribute.
 
 https://chatgpt.com/share/6877b47c-ae98-800f-b4ee-14cff28722ab
