@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "EU CELEX Linkifier",
+  "version": "0.1",
+  "description": "Turns references to EU legal documents into clickable CELEX links.",
+  "permissions": ["scripting"],
+  "action": {
+    "default_title": "EU CELEX Linkifier"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["patterns.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

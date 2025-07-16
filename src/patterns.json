@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Directive EU style",
+    "pattern": "(Directive)\\s+(\\d{4})\\/(\\d{1,4})\\/(EU|EC)?",
+    "type": "L"
+  },
+  {
+    "name": "Regulation EU style",
+    "pattern": "(Regulation)\\s+\\(EU\\)?\\s*(\\d{4})\\/(\\d{1,4})",
+    "type": "R"
+  },
+  {
+    "name": "Decision EC style",
+    "pattern": "(Decision)\\s+(\\d{4})\\/(\\d{1,4})\\/(EC|EU)?",
+    "type": "D"
+  },
+ {
+   "name": "Legacy Directives with EEC/EC suffix",
+   "pattern": "(\\b)(\\d{2,4})\\/(\\d{1,4})\\/(EEC|EC|EU)",
+   "type": "L"
+ }
+]
