@@ -1,45 +1,83 @@
-async function loadPatterns() {
-  try {
-    const response = await fetch(chrome.runtime.getURL("patterns.json"));
-    const patterns = await response.json();
-    console.log("✅ Loaded patterns:", patterns);
-    return patterns;
-  } catch (error) {
-    console.error("❌ Failed to load patterns.json:", error);
-    return [];
-  }
+// content.js — MVP version using a state machine to track legal type context
+
+let celexMap = {};
+let patterns = [];
+
+// Load CELEX map and regex patterns from config
+async function loadConfig() {
+  const [mapRes, patRes] = await Promise.all([
+    fetch(chrome.runtime.getURL("celex-map.json")),
+    fetch(chrome.runtime.getURL("patterns.json"))
+  ]);
+  celexMap = await mapRes.json();
+  patterns = await patRes.json();
+  console.log("🗺️ Loaded", Object.keys(celexMap).length, "CELEX map entries");
+  console.log("📐 Loaded", patterns.length, "regex patterns");
 }
 
-function normalizeYear(yearStr) {
-  const year = parseInt(yearStr);
-  return year < 100 ? (year > 30 ? `19${year}` : `20${year}`) : `${year}`;
+function normalizeYear(y) {
+  const yy = parseInt(y);
+  return yy < 100 ? (yy > 30 ? `19${yy}` : `20${yy}`) : `${yy}`;
 }
 
-function buildCelex(yearRaw, typeLetter, number) {
-  const year = normalizeYear(yearRaw);
-  console.log(`🔗 normalized year: ${year}`);
-  const celex = `3${year}${typeLetter}${number.padStart(4, "0")}`;
-  const url = `https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:${celex}`;
-  console.log(`🔗 Built CELEX URL: ${url}`);
-  return url;
+function buildCelex(year, type, number) {
+  const celex = `3${normalizeYear(year)}${type}${String(number).padStart(4, "0")}`;
+  return `https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:${celex}`;
 }
 
+function getMappedCelex(refKey) {
+  const clean = refKey.replace(/\s+/g, '').toUpperCase();
+  return celexMap[clean] ? `https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:${celexMap[clean]}` : null;
+}
 
-function linkify(textNode, patterns) {
+function processTextNode(textNode, state) {
   let text = textNode.nodeValue;
   let replaced = false;
 
+  const keywords = {
+    'Regulation': 'R',
+    'Regulations': 'R',
+    'Directive': 'L',
+    'Directives': 'L',
+    'Decision': 'D',
+    'Decisions': 'D'
+  };
+
+  // Detect context first
+  for (const k in keywords) {
+    if (text.includes(k)) {
+      console.log("🧭 Switching context to:", k);
+      state.currentType = keywords[k];
+    }
+  }
+
   for (const rule of patterns) {
     const regex = new RegExp(rule.pattern, "gi");
-    if (regex.test(text)) {
-      console.log(`🔍 Match found with pattern: ${rule.name}`);
-    }
     text = text.replace(regex, (match, ...groups) => {
-      const year = groups[1];
-      const number = groups[2];
-      const url = buildCelex(year, rule.type, number);
-      replaced = true;
-      return `<a href="${url}" target="_blank">${match}</a>`;
+      const refKey = groups.slice(0, 3).join('/').replace(/\s+/g, '').toUpperCase();
+      let celex = getMappedCelex(refKey);
+
+      const effectiveType = rule.type || state.currentType;
+
+      if (!celex && effectiveType && groups.length >= 2) {
+        const yearRaw = groups[0];
+        const numberRaw = groups[1];
+
+        if (/^\d{2,4}$/.test(yearRaw) && /^\d+$/.test(numberRaw)) {
+          celex = buildCelex(yearRaw, effectiveType, numberRaw);
+          console.log(`📦 Guessed CELEX: ${celex} (type: ${effectiveType}, year: ${yearRaw}, number: ${numberRaw})`);
+        } else {
+          console.warn("🚫 Invalid CELEX parts:", yearRaw, numberRaw);
+        }
+      }
+
+      if (celex) {
+        console.log(`🔗 Matched ${match} → ${celex}`);
+        replaced = true;
+        return `<a href="${celex}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+      }
+
+      return match;
     });
   }
 
@@ -47,28 +85,25 @@ function linkify(textNode, patterns) {
     const span = document.createElement("span");
     span.innerHTML = text;
     textNode.parentNode.replaceChild(span, textNode);
-    console.log("✅ Replaced text node with linked span:", span);
   }
 }
 
-function walkDOMAndLinkify(patterns) {
-  console.log("🚶 Walking DOM to find matches...");
+function walkDOMWithState() {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  const state = { currentType: null };
   let node;
   while ((node = walker.nextNode())) {
     const parent = node.parentNode;
     const isHidden = parent && (
-      parent.offsetParent === null ||                     // hidden via layout
-      window.getComputedStyle(parent).display === 'none' ||  // display: none
-      window.getComputedStyle(parent).visibility === 'hidden' || // visibility: hidden
-      parent.classList.contains('hidden')                // class-based
+      parent.offsetParent === null ||
+      window.getComputedStyle(parent).display === 'none' ||
+      window.getComputedStyle(parent).visibility === 'hidden' ||
+      parent.classList.contains('hidden')
     );
-
-    if (!isHidden && node.nodeValue.match(/\d{4}\/\d{1,4}/)) {
-      linkify(node, patterns);
+    if (!isHidden && node.nodeValue.match(/\d{2,4}\/\d{1,4}/)) {
+      processTextNode(node, state);
     }
   }
-  console.log("✅ DOM walk complete");
 }
 
-loadPatterns().then(patterns => walkDOMAndLinkify(patterns));
+loadConfig().then(() => walkDOMWithState());

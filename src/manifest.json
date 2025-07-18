@@ -16,7 +16,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["patterns.json"],
+      "resources": ["patterns.json", "celex-map.json"],
       "matches": ["<all_urls>"]
     }
   ]

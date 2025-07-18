@@ -1,22 +1,27 @@
 [
   {
-    "name": "Directive EU style",
-    "pattern": "(Directive)\\s+(\\d{4})\\/(\\d{1,4})\\/(EU|EC)?",
+    "name": "Basic Year/Number/EC or EU reference",
+    "pattern": "\\b(\\d{2,4})\\/(\\d{1,4})\\/(EC|EU)\\b",
     "type": "L"
   },
   {
-    "name": "Regulation EU style",
-    "pattern": "(Regulation)\\s+\\(EU\\)?\\s*(\\d{4})\\/(\\d{1,4})",
+    "name": "(EU|EC) prefix format (e.g. (EU) 2015/652)",
+    "pattern": "\\(?(EU|EC)\\)?\\s*(\\d{4})\\/(\\d{1,4})\\b",
+    "type": "L"
+  },
+  {
+    "name": "Regulation (EU) YYYY/NNNN",
+    "pattern": "\\bRegulation\\s*\\(EU\\)\\s*(\\d{4})\\/(\\d{1,4})\\b",
     "type": "R"
   },
   {
-    "name": "Decision EC style",
-    "pattern": "(Decision)\\s+(\\d{4})\\/(\\d{1,4})\\/(EC|EU)?",
-    "type": "D"
+    "name": "Regulations (EC) No NNN/NNNN",
+    "pattern": "\\bRegulations?\\s*\\(EC\\)\\s*No\\s*(\\d{1,4})\\/(\\d{1,4})\\b",
+    "type": "R"
   },
- {
-   "name": "Legacy Directives with EEC/EC suffix",
-   "pattern": "(\\b)(\\d{2,4})\\/(\\d{1,4})\\/(EEC|EC|EU)",
-   "type": "L"
- }
+  {
+    "name": "Repealing Regulation (EU) No NNN/NNNN",
+    "pattern": "repealing\\s+Regulation\\s*\\(EU\\)\\s*No\\s*(\\d{1,4})\\/(\\d{1,4})\\b",
+    "type": "R"
+  }
 ]
