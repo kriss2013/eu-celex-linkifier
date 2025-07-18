@@ -60,8 +60,22 @@ function processTextNode(textNode, state) {
       const effectiveType = rule.type || state.currentType;
 
       if (!celex && effectiveType && groups.length >= 2) {
-        const yearRaw = groups[0];
-        const numberRaw = groups[1];
+        let yearRaw, numberRaw;
+
+        console.log("🧪 Captured groups:", groups);
+        console.log("🧭 Rule groupOrder:", rule.groupOrder);
+        if (rule.groupOrder?.length >= 2) {
+          const idxYear = rule.groupOrder.findIndex(x => x === "year");
+          const idxNumber = rule.groupOrder.findIndex(x => x === "number");
+          yearRaw = groups[idxYear];
+          numberRaw = groups[idxNumber];
+        } else {
+          // fallback assumption
+          yearRaw = groups[0];
+          numberRaw = groups[1];
+        }
+        console.log("year: ",yearRaw);
+        console.log("number: ",numberRaw);
 
         if (/^\d{2,4}$/.test(yearRaw) && /^\d+$/.test(numberRaw)) {
           celex = buildCelex(yearRaw, effectiveType, numberRaw);

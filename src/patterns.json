@@ -1,5 +1,11 @@
 [
   {
+    "name": "Regulation (EC) No 663/2009",
+    "pattern": "(?:EC|EU)?\\s*No\\s*(\\d{1,4})\\/(\\d{4})",
+    "type": "R",
+    "groupOrder": ["number", "year"]
+  },
+   {
     "name": "Basic Year/Number/EC or EU reference",
     "pattern": "\\b(\\d{2,4})\\/(\\d{1,4})\\/(EC|EU)\\b",
     "type": "L"
