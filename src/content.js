@@ -1,18 +1,11 @@
-// content.js — MVP version using a state machine to track legal type context
+// content.js — Clean version without external patterns.json
 
 let celexMap = {};
-let patterns = [];
 
-// Load CELEX map and regex patterns from config
 async function loadConfig() {
-  const [mapRes, patRes] = await Promise.all([
-    fetch(chrome.runtime.getURL("celex-map.json")),
-    fetch(chrome.runtime.getURL("patterns.json"))
-  ]);
-  celexMap = await mapRes.json();
-  patterns = await patRes.json();
+  const res = await fetch(chrome.runtime.getURL("celex-map.json"));
+  celexMap = await res.json();
   console.log("🗺️ Loaded", Object.keys(celexMap).length, "CELEX map entries");
-  console.log("📐 Loaded", patterns.length, "regex patterns");
 }
 
 function normalizeYear(y) {
@@ -30,81 +23,89 @@ function getMappedCelex(refKey) {
   return celexMap[clean] ? `https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:${celexMap[clean]}` : null;
 }
 
-function processTextNode(textNode, state) {
-  let text = textNode.nodeValue;
-  let replaced = false;
+function tokenize(text) {
+  return text.match(/(\d{2,4}\/\d{1,4}|\w+|No|[()\s]+)/g) || [];
+}
 
-  const keywords = {
-    'Regulation': 'R',
-    'Regulations': 'R',
+function isTypeKeyword(token) {
+  const map = {
     'Directive': 'L',
     'Directives': 'L',
+    'Regulation': 'R',
+    'Regulations': 'R',
     'Decision': 'D',
     'Decisions': 'D'
   };
+  return map[token] || null;
+}
 
-  // Detect context first
-  for (const k in keywords) {
-    if (text.includes(k)) {
-      console.log("🧭 Switching context to:", k);
-      state.currentType = keywords[k];
+function processTextNodeWithParser(textNode, state) {
+  const text = textNode.nodeValue;
+  const tokens = tokenize(text);
+  const resultHTML = [];
+
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+
+    const newType = isTypeKeyword(token);
+    if (newType) {
+      state.currentType = newType;
+      resultHTML.push(token);
+      continue;
+    }
+
+    let year, number, matched = false;
+    let combined = "";
+
+    if (token === "No") {
+      let j = i + 1;
+      // Skip spaces
+      while (tokens[j] && /^\s+$/.test(tokens[j])) j++;
+
+      if (tokens[j] && /^\d{1,4}\/\d{2,4}$/.test(tokens[j])) {
+        const [num, yr] = tokens[j].split("/");
+        number = num;
+        year = normalizeYear(yr);
+        combined = token + " " + tokens[j];
+        i = j; // advance i to skip the number
+        matched = true;
+      }
+    }
+
+
+    // Match 94/22 or 2013/34
+    if (!matched && /^\d{2,4}\/\d{1,4}$/.test(token)) {
+      const [yr, num] = token.split("/");
+      year = normalizeYear(yr);
+      number = num;
+      combined = token;
+      matched = true;
+    }
+
+    if (matched && state.currentType && /^\d+$/.test(number) && /^\d+$/.test(year)) {
+      const refKey = `${year}/${number}`;
+      let celex = getMappedCelex(refKey);
+      if (!celex) {
+        celex = buildCelex(year, state.currentType, number);
+      }
+      const safe = combined.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const link = `<a href="${celex}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+      resultHTML.push(link);
+    } else if (!matched) {
+      resultHTML.push(token);
     }
   }
 
-  for (const rule of patterns) {
-    const regex = new RegExp(rule.pattern, "gi");
-    text = text.replace(regex, (match, ...groups) => {
-      const refKey = groups.slice(0, 3).join('/').replace(/\s+/g, '').toUpperCase();
-      let celex = getMappedCelex(refKey);
-
-      const effectiveType = rule.type || state.currentType;
-
-      if (!celex && effectiveType && groups.length >= 2) {
-        let yearRaw, numberRaw;
-
-        console.log("🧪 Captured groups:", groups);
-        console.log("🧭 Rule groupOrder:", rule.groupOrder);
-        if (rule.groupOrder?.length >= 2) {
-          const idxYear = rule.groupOrder.findIndex(x => x === "year");
-          const idxNumber = rule.groupOrder.findIndex(x => x === "number");
-          yearRaw = groups[idxYear];
-          numberRaw = groups[idxNumber];
-        } else {
-          // fallback assumption
-          yearRaw = groups[0];
-          numberRaw = groups[1];
-        }
-        console.log("year: ",yearRaw);
-        console.log("number: ",numberRaw);
-
-        if (/^\d{2,4}$/.test(yearRaw) && /^\d+$/.test(numberRaw)) {
-          celex = buildCelex(yearRaw, effectiveType, numberRaw);
-          console.log(`📦 Guessed CELEX: ${celex} (type: ${effectiveType}, year: ${yearRaw}, number: ${numberRaw})`);
-        } else {
-          console.warn("🚫 Invalid CELEX parts:", yearRaw, numberRaw);
-        }
-      }
-
-      if (celex) {
-        console.log(`🔗 Matched ${match} → ${celex}`);
-        replaced = true;
-        return `<a href="${celex}" target="_blank" rel="noopener noreferrer">${match}</a>`;
-      }
-
-      return match;
-    });
-  }
-
-  if (replaced) {
-    const span = document.createElement("span");
-    span.innerHTML = text;
-    textNode.parentNode.replaceChild(span, textNode);
-  }
+  const span = document.createElement("span");
+  span.innerHTML = resultHTML.join("");
+  textNode.parentNode.replaceChild(span, textNode);
 }
 
-function walkDOMWithState() {
+function walkDOMWithParser() {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-  const state = { currentType: null };
+  const nodes = [];
+
   let node;
   while ((node = walker.nextNode())) {
     const parent = node.parentNode;
@@ -114,10 +115,17 @@ function walkDOMWithState() {
       window.getComputedStyle(parent).visibility === 'hidden' ||
       parent.classList.contains('hidden')
     );
+
     if (!isHidden && node.nodeValue.match(/\d{2,4}\/\d{1,4}/)) {
-      processTextNode(node, state);
+      nodes.push(node);
     }
+  }
+
+  const state = { currentType: null };
+  for (const node of nodes) {
+    if (!document.body.contains(node)) continue;
+    processTextNodeWithParser(node, state);
   }
 }
 
-loadConfig().then(() => walkDOMWithState());
+loadConfig().then(() => walkDOMWithParser());
