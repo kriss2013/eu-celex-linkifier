@@ -20,13 +20,14 @@
 3. Enable **Developer Mode**
 4. Click **Load unpacked** and select this folder
 
-The extension will now automatically run on any page you visit.
+The extension will now automatically run on any https://eur-lex.europa.eu/legal-content/* page you visit.
 
 ## 🛠 Configuration
 
 Patterns for detecting document references are stored in `patterns.json`. You can:
 - Add or modify regex rules
 - Specify the document type (`L`, `R`, `D`, etc.)
+- Supports groupOrder to control how regex capture groups map to CELEX components like year and number.
 - Extend support for new legal reference formats
 
 Example:
@@ -35,14 +36,13 @@ Example:
 {
   "name": "Directive EU style",
   "pattern": "(Directive)\\s+(\\d{4})\\/(\\d{1,4})\\/(EU|EC)?",
-  "type": "L"
+  "type": "L",
+  "groupOrder": ["year", "number"]
 }
 ```
 
 ## 🚧 Known Limitations
 
-- Doesn’t yet handle complex "factorized" references like:  
-  _"Council Directives 78/660/EEC and 83/349/EEC"_ (basic support is included)
 - Currently assumes most references point to **binding law** (Sector 3 CELEX)
 - Does not validate CELEX codes (no lookup to check if they exist)
 

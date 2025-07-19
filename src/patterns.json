@@ -6,8 +6,8 @@
     "groupOrder": ["number", "year"]
   },
    {
-    "name": "Basic Year/Number/EC or EU reference",
-    "pattern": "\\b(\\d{2,4})\\/(\\d{1,4})\\/(EC|EU)\\b",
+    "name": "Basic Year/Number/EC, EU or EEC reference",
+    "pattern": "\\b(\\d{2,4})\\/(\\d{1,4})\\/(EC|EU|EEC)\\b",
     "type": "L"
   },
   {
@@ -21,13 +21,15 @@
     "type": "R"
   },
   {
-    "name": "Regulations (EC) No NNN/NNNN",
+    "name": "Regulations (EC) No NNN/YYYY",
     "pattern": "\\bRegulations?\\s*\\(EC\\)\\s*No\\s*(\\d{1,4})\\/(\\d{1,4})\\b",
-    "type": "R"
+    "type": "R",
+    "groupOrder": ["number", "year"]
   },
   {
-    "name": "Repealing Regulation (EU) No NNN/NNNN",
+    "name": "Repealing Regulation (EU) No NNN/YYYY",
     "pattern": "repealing\\s+Regulation\\s*\\(EU\\)\\s*No\\s*(\\d{1,4})\\/(\\d{1,4})\\b",
-    "type": "R"
+    "type": "R",
+    "groupOrder": ["number", "year"]
   }
 ]
