@@ -115,8 +115,12 @@ function walkDOMWithParser() {
       window.getComputedStyle(parent).visibility === 'hidden' ||
       parent.classList.contains('hidden')
     );
+    const isAllowedParagraph =
+    parent &&
+    parent.tagName === 'P' &&
+    ['title-bold', 'oj-normal', 'oj-note', 'oj-sti-art'].some(cls => parent.classList.contains(cls));
 
-    if (!isHidden && node.nodeValue.match(/\d{2,4}\/\d{1,4}/)) {
+    if (!isHidden && isAllowedParagraph && /\d{2,4}\/\d{1,4}/.test(node.nodeValue)) {
       nodes.push(node);
     }
   }

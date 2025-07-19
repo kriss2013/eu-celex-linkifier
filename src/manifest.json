@@ -9,7 +9,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://eur-lex.europa.eu/*"],
+      "matches": ["https://eur-lex.europa.eu/legal-content/EN/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
