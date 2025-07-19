@@ -10,8 +10,7 @@
   - Decisions (e.g., `Decision 2009/821/EC`)
   - Legacy references (e.g., `78/660/EEC`)
 - 🧠 Automatically generates CELEX URIs (e.g., `32013L0034`)
-- 🛠 Regex-based parsing is fully configurable via a `patterns.json` file
-- 🧪 Works on any website containing legal references
+- 🧪 Automatically run on any https://eur-lex.europa.eu/legal-content/EN/* page you visit.
 
 ## 📦 How to Install
 
@@ -19,27 +18,6 @@
 2. In Chrome, go to `chrome://extensions/`
 3. Enable **Developer Mode**
 4. Click **Load unpacked** and select this folder
-
-The extension will now automatically run on any https://eur-lex.europa.eu/legal-content/* page you visit.
-
-## 🛠 Configuration
-
-Patterns for detecting document references are stored in `patterns.json`. You can:
-- Add or modify regex rules
-- Specify the document type (`L`, `R`, `D`, etc.)
-- Supports groupOrder to control how regex capture groups map to CELEX components like year and number.
-- Extend support for new legal reference formats
-
-Example:
-
-```json
-{
-  "name": "Directive EU style",
-  "pattern": "(Directive)\\s+(\\d{4})\\/(\\d{1,4})\\/(EU|EC)?",
-  "type": "L",
-  "groupOrder": ["year", "number"]
-}
-```
 
 ## 🚧 Known Limitations
 
