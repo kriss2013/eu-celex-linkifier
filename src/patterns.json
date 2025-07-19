@@ -12,7 +12,7 @@
   },
   {
     "name": "(EU|EC) prefix format (e.g. (EU) 2015/652)",
-    "pattern": "\\(?(EU|EC)\\)?\\s*(\\d{4})\\/(\\d{1,4})\\b",
+    "pattern": "\\(?(?:EU|EC)\\)?\\s*(\\d{4})\\/(\\d{1,4})\\b",
     "type": "L"
   },
   {
