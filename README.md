@@ -10,7 +10,9 @@
   - Decisions (e.g., `Decision 2009/821/EC`)
   - Legacy references (e.g., `78/660/EEC`)
 - 🧠 Automatically generates CELEX URIs (e.g., `32013L0034`)
-- 🧪 Automatically run on any https://eur-lex.europa.eu/legal-content/EN/* page you visit.
+- 🧪 Automatically run on following pages
+  - https://eur-lex.europa.eu/legal-content/EN/*
+  - https://eur-lex.europa.eu/eli/reg/*/*/oj/eng
 
 ## 📦 How to Install
 
